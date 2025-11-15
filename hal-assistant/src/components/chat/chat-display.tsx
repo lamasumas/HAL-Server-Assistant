@@ -5,7 +5,7 @@ import Message from "./message";
 interface MessagesAreaProps {
   messages: ChatMessage[];
   isLoading: boolean;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function MessagesArea({

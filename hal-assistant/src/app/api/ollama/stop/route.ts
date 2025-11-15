@@ -1,21 +1,22 @@
-// app/api/ollama/stop/route.ts
+import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { NextResponse } from "next/server";
 
-const execAsync = promisify(exec);
+const execPromise = promisify(exec);
 
 export async function POST() {
-    try {
-        await execAsync("pkill -f ollama");
-        return NextResponse.json({
-            success: true,
-            message: "Ollama stopped",
-        });
-    } catch (error) {
-        return NextResponse.json(
-            { success: false, error: (error as Error).message },
-            { status: 500 },
-        );
-    }
+  try {
+    // Stop Ollama service using systemctl
+    await execPromise("pkill -f 'ollama serve'");
+
+    return NextResponse.json({
+      success: true,
+      message: "Ollama stopped successfully",
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
 }
