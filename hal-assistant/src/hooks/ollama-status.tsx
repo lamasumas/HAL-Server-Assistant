@@ -30,7 +30,7 @@ export const useOllamaStatus = (): OllamaStatusHook => {
   const fetchAvailableModels = async () => {
     setLoadingModels(true);
     try {
-      const res = await fetch("http://localhost:11434/api/tags");
+      const res = await fetch("api/ollama/tags");
       if (res.ok) {
         const data = await res.json();
         const models: Model[] = data.models || [];
