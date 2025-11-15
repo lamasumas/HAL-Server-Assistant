@@ -53,7 +53,7 @@ export const useOllamaStatus = (): OllamaStatusHook => {
     setStatusLoading(true);
     try {
       // Attempt to hit the tags endpoint to check connectivity
-      const res = await fetch("http://localhost:11434/api/tags");
+      const res = await fetch("/api/ollama/tags");
       const status: OllamaStatus = res.ok ? "running" : "stopped";
       setOllamaStatus(status);
 
