@@ -1,16 +1,20 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { ChatMessage, ChatRole } from "./types";
+import { ChatRole } from "./types";
 import ChatHeader from "./chat-header";
 import MessagesArea from "./chat-display";
 import OllamaControls from "./ollama-controls";
 import ChatInput from "./chat-input";
 import { useOllamaStatus } from "@/hooks/ollama-status";
 import {
+  loadConversation,
   sendMessageToLlm,
   startOllamaService,
   stopOllamaService,
+  summaryChat,
 } from "../ollama/ollama-interface";
+import Sidebar from "./chat-history";
+import { MessageStruct } from "../db/db-functions";
 
 export default function OllamaChatRoom() {
   const {
@@ -24,12 +28,17 @@ export default function OllamaChatRoom() {
     checkOllamaStatus,
   } = useOllamaStatus();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [currentConversationId, setCurrentConversationId] = useState<
+    number | null
+  >(null);
+
+  const [currentSummary, setCurrentSummary] = useState<string>("");
+  const [messages, setMessages] = useState<MessageStruct[]>([
     {
       id: 1,
       role: "assistant",
       content: "Hello! I'm ready to chat. Make sure Ollama is running.",
-    },
+    } as MessageStruct,
   ]);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -41,8 +50,77 @@ export default function OllamaChatRoom() {
   };
 
   useEffect(() => {
+    if (currentConversationId) {
+      loadConversation(currentConversationId).then((messages) => {
+        setMessages(messages);
+      });
+    }
+  }, [currentConversationId]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const startNewConversation = async () => {
+    if (!selectedModel) {
+      addMessage("system", "Error: No model selected.");
+      return;
+    }
+
+    try {
+      const res = await fetch("api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: selectedModel,
+          title: "New Chat",
+        }),
+      });
+
+      if (res.ok) {
+        const newConv = await res.json();
+        setCurrentConversationId(newConv.id);
+        setMessages([
+          {
+            id: Date.now(),
+            role: "assistant",
+            content: "Hello! I'm ready to chat. Make sure Ollama is running.",
+          } as MessageStruct,
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to create conversation:", error);
+    }
+  };
+
+  const saveMessageToDb = async (
+    role: ChatRole,
+    content: string,
+    summary: string
+  ): Promise<number | null> => {
+    if (!currentConversationId) return null;
+
+    try {
+      const res = await fetch("api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: currentConversationId,
+          role,
+          content,
+          summary,
+        }),
+      });
+
+      if (res.ok) {
+        const message = await res.json();
+        return message.id;
+      }
+    } catch (error) {
+      console.error("Failed to save message:", error);
+    }
+    return null;
+  };
 
   const startOllama = async () => {
     addMessage("system", "Attempting to start Ollama...");
@@ -75,7 +153,7 @@ export default function OllamaChatRoom() {
         id: Date.now() + Math.random(),
         role,
         content,
-      },
+      } as MessageStruct,
     ]);
   };
 
@@ -114,34 +192,54 @@ export default function OllamaChatRoom() {
         id: assistantMessageId,
         role: "assistant",
         content: "",
-      },
+      } as MessageStruct,
     ]);
 
     try {
-      const response = await sendMessageToLlm(selectedModel, userMessage);
-
+      const response = await sendMessageToLlm(
+        selectedModel,
+        userMessage,
+        messages,
+        currentSummary
+      );
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let accumulatedContent = "";
 
       if (reader) {
+        let buffer = "";
+
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            summaryChat(selectedModel, messages).then((summary) => {
+              messages.forEach((m) => (m.summary = summary));
+              setCurrentSummary(summary);
+              saveMessageToDb("user", userMessage, summary);
+              saveMessageToDb("assistant", accumulatedContent, summary);
+            });
+            break;
+          }
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n").filter((line) => line.trim());
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
 
           for (const line of lines) {
+            if (!line.trim()) continue;
             try {
               const json = JSON.parse(line);
-              if (json.response) {
-                accumulatedContent += json.response;
+              if (json.message?.content) {
+                accumulatedContent += json.message.content.replace(
+                  /\\n/g,
+                  "\n"
+                );
                 updateMessage(assistantMessageId, accumulatedContent);
               }
             } catch (e) {
-              // Skip invalid JSON lines
-              console.warn("Failed to parse JSON line:", line);
+              console.error("JSON parse error:", e, "LINE:", line);
             }
           }
         }
@@ -162,34 +260,42 @@ export default function OllamaChatRoom() {
   };
 
   return (
-    <div className="flex flex-col w-full h-screen max-h-screen">
-      <ChatHeader
-        selectedModel={selectedModel}
-        setSelectedModel={setSelectedModel}
-        availableModels={availableModels}
-        loadingModels={loadingModels}
+    <div className="flex w-full h-screen max-h-screen">
+      <Sidebar
+        currentConversationId={currentConversationId}
+        onConversationSelect={setCurrentConversationId}
+        onNewConversation={startNewConversation}
       />
 
-      <MessagesArea
-        messages={messages}
-        isLoading={isLoading}
-        messagesEndRef={messagesEndRef}
-      />
+      <div className="flex flex-col flex-1 w-full h-screen max-h-screen">
+        <ChatHeader
+          selectedModel={selectedModel}
+          setSelectedModel={setSelectedModel}
+          availableModels={availableModels}
+          loadingModels={loadingModels}
+        />
 
-      <OllamaControls
-        ollamaStatus={ollamaStatus}
-        statusLoading={statusLoading}
-        onStart={startOllama}
-        onStop={stopOllama}
-        onRefresh={checkOllamaStatus}
-      />
+        <MessagesArea
+          messages={messages}
+          isLoading={isLoading}
+          messagesEndRef={messagesEndRef}
+        />
 
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        onSend={sendMessage}
-        isLoading={isLoading}
-      />
+        <OllamaControls
+          ollamaStatus={ollamaStatus}
+          statusLoading={statusLoading}
+          onStart={startOllama}
+          onStop={stopOllama}
+          onRefresh={checkOllamaStatus}
+        />
+
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          onSend={sendMessage}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 }

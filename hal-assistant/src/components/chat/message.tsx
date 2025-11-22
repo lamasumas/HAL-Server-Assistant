@@ -1,8 +1,8 @@
 import React from "react";
-import { ChatMessage } from "./types";
+import { MessageStruct } from "../db/db-functions";
 
 interface MessageProps {
-  message: ChatMessage;
+  message: MessageStruct;
 }
 
 export default function Message({ message }: MessageProps) {
