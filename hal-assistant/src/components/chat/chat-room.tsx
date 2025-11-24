@@ -14,9 +14,11 @@ import {
   summaryChat,
 } from "../ollama/ollama-interface";
 import Sidebar from "./chat-history";
+import { useSettings } from "../context/settings-context";
 import { MessageStruct } from "../db/db-functions";
 
 export default function OllamaChatRoom() {
+  const { settings } = useSettings();
   const {
     ollamaStatus,
     statusLoading,
@@ -200,7 +202,8 @@ export default function OllamaChatRoom() {
         selectedModel,
         userMessage,
         messages,
-        currentSummary
+        currentSummary,
+        settings.systemPrompt
       );
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();

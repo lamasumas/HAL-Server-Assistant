@@ -1,5 +1,8 @@
-import { RefreshCw } from "lucide-react";
+"use client"
+import { RefreshCw, Settings } from "lucide-react";
 import { Model } from "./types";
+import { useState } from "react";
+import SettingsPanel from "../settings/settings-panel";
 
 interface ChatHeaderProps {
   selectedModel: string;
@@ -14,6 +17,7 @@ export default function ChatHeader({
   availableModels,
   loadingModels,
 }: ChatHeaderProps) {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   return (
     <div className="bg-gray-800 border-b border-gray-700 p-4 shadow-lg">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -41,8 +45,12 @@ export default function ChatHeader({
           {loadingModels && (
             <RefreshCw size={18} className="animate-spin text-blue-400" />
           )}
+          <button onClick={() => setIsSettingsOpen(true)} className="text-gray-300 hover:text-white">
+            <Settings size={20} />
+          </button>
         </div>
       </div>
+      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

@@ -4,7 +4,8 @@ export async function sendMessageToLlm(
   selectedModel: string,
   userMessage: string,
   history: MessageStruct[],
-  summary?: string
+  summary?: string,
+  systemPrompt?: string,
 ) {
   const lastMessages = history.length > 5 ? history.slice(-5) : history;
 
@@ -23,6 +24,7 @@ export async function sendMessageToLlm(
     body: JSON.stringify({
       model: selectedModel,
       messages: [
+        { role: "system", content: systemPrompt },
         ...(summaryMessage ? [summaryMessage] : []),
         ...lastMessages.map((msg) => ({
           role: msg.role,
