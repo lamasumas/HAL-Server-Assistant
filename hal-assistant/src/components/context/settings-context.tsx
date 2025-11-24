@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Settings {
   systemPrompt: string;
+  maxTokens: number;
 }
 
 interface SettingsContextType {
@@ -15,6 +16,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>({
     systemPrompt: 'You are a helpful assistant.',
+    maxTokens: 1000, // Default value for maxTokens
   });
 
   useEffect(() => {

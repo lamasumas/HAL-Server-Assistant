@@ -17,6 +17,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     }));
   };
 
+  const handleMaxTokensChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value);
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      maxTokens: isNaN(value) ? 0 : value, // Handle invalid input gracefully
+    }));
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -37,6 +45,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
             value={settings.systemPrompt}
             onChange={handleSystemPromptChange}
             className="w-full h-40 bg-gray-700 border border-gray-600 rounded-md p-2 text-sm"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="max-tokens" className="block text-sm font-medium mb-2">
+            Max Tokens
+          </label>
+          <input
+            type="number"
+            id="max-tokens"
+            value={settings.maxTokens}
+            onChange={handleMaxTokensChange}
+            className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-sm"
+            min="1"
           />
         </div>
         <button

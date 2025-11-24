@@ -6,6 +6,7 @@ export async function sendMessageToLlm(
   history: MessageStruct[],
   summary?: string,
   systemPrompt?: string,
+  maxTokens?: number,
 ) {
   const lastMessages = history.length > 5 ? history.slice(-5) : history;
 
@@ -33,7 +34,7 @@ export async function sendMessageToLlm(
         { role: "user", content: userMessage },
       ],
       options: {
-        num_predict: 1000,
+        num_predict: maxTokens || 1000,
       },
     }),
   });

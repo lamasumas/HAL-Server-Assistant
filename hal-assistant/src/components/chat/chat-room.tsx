@@ -203,7 +203,8 @@ export default function OllamaChatRoom() {
         userMessage,
         messages,
         currentSummary,
-        settings.systemPrompt
+        settings.systemPrompt,
+        settings.maxTokens,
       );
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
