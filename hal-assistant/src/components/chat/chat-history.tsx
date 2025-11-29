@@ -36,7 +36,7 @@ export default function Sidebar({
   onConversationSelect,
   onNewConversation,
 }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -45,6 +45,13 @@ export default function Sidebar({
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  // Set latest conversation as default
+  useEffect(() => {
+    if (!currentConversationId && conversations.length > 0) {
+      onConversationSelect(conversations[0].id);
+    }
+  }, [conversations]);
 
   const fetchConversations = async () => {
     await fetchConversationsFromDB(setConversations, setLoading);
@@ -88,10 +95,14 @@ export default function Sidebar({
       {/* Toggle Button - Always Visible */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors shadow-lg"
+        className="fixed top-4 left-4 z-50 p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors shadow-lg cursor-pointer"
         title={isOpen ? "Close sidebar" : "Open sidebar"}
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        {isOpen ? (
+          <X size={24} />
+        ) : (
+          <img src="/HAL.svg" alt="HAL Icon" className="w-6" />
+        )}
       </button>
 
       {/* Sidebar */}

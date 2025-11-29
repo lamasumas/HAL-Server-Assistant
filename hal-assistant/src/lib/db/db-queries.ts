@@ -14,6 +14,22 @@ export interface Message {
   created_at: string;
 }
 
+export interface SystemSettingsPrompt {
+  id: number;
+  prompt: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SystemSettings {
+  id: number;
+  name: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Conversation queries
 export const conversationQueries = {
   create: (title?: string) => {
@@ -53,6 +69,38 @@ export const conversationQueries = {
       "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     );
     return stmt.run(id);
+  },
+};
+
+export const SystemSettingsPromptQueries = {
+  getAll: () => {
+    const stmt = db.prepare(
+      "SELECT * FROM system_settings ORDER BY updated_at DESC"
+    );
+    return stmt.all() as SystemSettings[];
+  },
+};
+
+export const SystemPromptsQueries = {
+  getPersonalities: () => {
+    const stmt = db.prepare(
+      "SELECT * FROM system_settings_prompts ORDER BY updated_at DESC"
+    );
+    return stmt.all() as SystemSettingsPrompt[];
+  },
+
+  create: (prompt: string, title: string) => {
+    const stmt = db.prepare(
+      "INSERT INTO system_settings_prompts (prompt, title) VALUES (?, ?) RETURNING *"
+    );
+    return stmt.get(prompt, title) as SystemSettingsPrompt;
+  },
+
+  update: (id: number, title: string) => {
+    const stmt = db.prepare(
+      "UPDATE system_settings_prompts SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    );
+    return stmt.run(title, id);
   },
 };
 

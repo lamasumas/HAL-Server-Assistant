@@ -24,8 +24,7 @@ export default function ChatInput({
   return (
     <div className="bg-gray-900 border-t border-gray-700 p-4 shadow-2xl">
       <div className="flex gap-3">
-        <input
-          type="text"
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}

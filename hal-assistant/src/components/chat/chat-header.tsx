@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { RefreshCw, Settings } from "lucide-react";
 import { Model } from "./types";
 import { useState } from "react";
@@ -21,7 +21,9 @@ export default function ChatHeader({
   return (
     <div className="bg-gray-800 border-b border-gray-700 p-4 shadow-lg">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-blue-400">Ollama Chat</h1>
+        <h1 className="pl-15 text-2xl font-bold text-blue-400">
+          HAL Assistant
+        </h1>
         <div className="flex items-center gap-3">
           <label className="text-sm text-gray-300 whitespace-nowrap">
             Model:
@@ -45,12 +47,18 @@ export default function ChatHeader({
           {loadingModels && (
             <RefreshCw size={18} className="animate-spin text-blue-400" />
           )}
-          <button onClick={() => setIsSettingsOpen(true)} className="text-gray-300 hover:text-white">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="text-gray-300 hover:text-white"
+          >
             <Settings size={20} />
           </button>
         </div>
       </div>
-      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </div>
   );
 }

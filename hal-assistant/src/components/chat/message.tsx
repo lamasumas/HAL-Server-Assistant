@@ -1,5 +1,7 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
 import { MessageStruct } from "../db/db-functions";
+import CodeBlock from "./code-block";
 
 interface MessageProps {
   message: MessageStruct;
@@ -27,7 +29,25 @@ export default function Message({ message }: MessageProps) {
           </div>
         )}
         <div className="whitespace-pre-wrap text-sm md:text-base">
-          {message.content}
+          <ReactMarkdown
+            components={{
+              code({ node, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || "");
+                return match ? (
+                  <CodeBlock
+                    language={match[1]}
+                    value={String(children).replace(/\n$/, "")}
+                  />
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
         </div>
       </div>
     </div>
